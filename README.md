@@ -22,7 +22,7 @@ This project consists of three microservices:
    dotnet restore
    ```
 
-## ▶Running the Services
+## Running the Services
 Each service runs independently. Open **three terminals** and run:
 
 ### Start `LoggingService`:
