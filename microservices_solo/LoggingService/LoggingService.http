@@ -1,0 +1,16 @@
+@LoggingService_HostAddress = http://localhost:5001
+
+### Send a POST request to log a message
+POST {{LoggingService_HostAddress}}/api/logging/log
+Content-Type: application/json
+
+{
+    "id": "123445",
+    "message": "This is a log entry 2"
+}
+
+###
+
+### Fetch all logs
+GET {{LoggingService_HostAddress}}/api/logging/logs
+Accept: application/json
