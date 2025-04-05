@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoggingService", "LoggingSe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessagesService", "MessagesService\MessagesService.csproj", "{525C93A4-6054-472D-9FF6-F034A4F841B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigServer", "ConfigServer\ConfigServer.csproj", "{50717CB2-FEDD-4277-8D6D-E3513B24C294}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{525C93A4-6054-472D-9FF6-F034A4F841B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{525C93A4-6054-472D-9FF6-F034A4F841B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{525C93A4-6054-472D-9FF6-F034A4F841B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50717CB2-FEDD-4277-8D6D-E3513B24C294}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50717CB2-FEDD-4277-8D6D-E3513B24C294}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50717CB2-FEDD-4277-8D6D-E3513B24C294}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50717CB2-FEDD-4277-8D6D-E3513B24C294}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

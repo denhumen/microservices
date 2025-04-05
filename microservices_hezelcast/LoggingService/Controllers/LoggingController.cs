@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Hazelcast.DistributedObjects;
+using LoggingService.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LoggingService.Controllers
@@ -7,28 +9,34 @@ namespace LoggingService.Controllers
     [Route("api/[controller]")]
     public class LoggingController : Controller
     {
-        private static readonly Dictionary<string, string> logs = new();
+        private readonly IHMap<string, string> _logMap;
+
+        public LoggingController(HazelcastService hazelcastService)
+        {
+            _logMap = hazelcastService.LogMap;
+        }
+
 
         [HttpPost("log")]
-        public IActionResult LogMessage([FromBody] LogEntry entry)
+        public async Task<IActionResult> LogMessageAsync([FromBody] LogEntry entry)
         {
-            if (logs.ContainsKey(entry.Id))
+            if (await _logMap.ContainsKeyAsync(entry.Id))
             {
                 Console.WriteLine($"[LoggingService] Duplicate message detected: {entry.Id}");
                 return Conflict("Duplicate message detected.");
             }
-
-            logs[entry.Id] = entry.Message;
+            await _logMap.SetAsync(entry.Id, entry.Message);
             Console.WriteLine($"[LoggingService] New log received. ID: {entry.Id}, Message: {entry.Message}");
             return Ok();
         }
 
 
         [HttpGet("logs")]
-        public IActionResult GetLogs()
+        public async Task<IActionResult> GetLogs()
         {
             Console.WriteLine("[LoggingService] Sending stored logs...");
-            return Ok(string.Join("\n", logs.Values));
+            var logs = await _logMap.GetValuesAsync();
+            return Ok(string.Join("\n", logs));
         }
 
     }

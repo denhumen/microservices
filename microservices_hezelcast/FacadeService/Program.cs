@@ -19,6 +19,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient("LoggingServiceClient").AddPolicyHandler(retryPolicy);
 
+builder.Services.AddSingleton<FacadeService.Services.ServiceDiscovery>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
