@@ -1,0 +1,15 @@
+@FacadeService_HostAddress = http://localhost:5000
+
+### Send a POST request to send a message
+POST {{FacadeService_HostAddress}}/api/Facade/send
+Content-Type: application/json
+
+{
+    "message": "Hello from HTTP file!"
+} 
+
+###
+
+### Send a GET request to fetch messages
+GET {{FacadeService_HostAddress}}/api/Facade/fetch
+Accept: application/json

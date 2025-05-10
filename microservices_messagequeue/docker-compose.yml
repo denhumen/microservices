@@ -1,0 +1,201 @@
+version: '3.8'
+services:
+  # 1) ZooKeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  # 2) Kafka brokers
+  kafka-1:
+    image: confluentinc/cp-kafka:latest
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    ports:
+      - "9092:9092"
+
+  kafka-2:
+    image: confluentinc/cp-kafka:latest
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    ports:
+      - "9093:9092"
+
+  kafka-3:
+    image: confluentinc/cp-kafka:latest
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    ports:
+      - "9094:9092"
+
+  # 3) Create the topic
+  topic-creator:
+    image: confluentinc/cp-kafka:latest
+    depends_on: [kafka-1,kafka-2,kafka-3]
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        sleep 10 && \
+        kafka-topics --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --create --topic messages \
+          --partitions 3 --replication-factor 3
+
+  # 4) Hazelcast cluster
+  hazelcast:
+    image: hazelcast/hazelcast:latest
+    environment:
+      - HZ_CLUSTERNAME=dev
+    ports:
+      - "5701:5701"
+
+  management-center:
+    image: hazelcast/management-center:latest
+    depends_on: [hazelcast]
+    environment:
+      - HZ_CLUSTERNAME=dev
+      - HZ_MC_CLUSTERNAME=dev
+    ports:
+      - "8080:8080"
+
+  # 5) ConfigServer
+  config-server:
+    build:
+      context: .
+      dockerfile: ConfigServer/Dockerfile
+    environment:
+      # (ensure the app listens on all interfaces)
+      - ASPNETCORE_URLS=http://0.0.0.0:5001
+    ports:
+      - "5001:5001"
+    depends_on:
+      - topic-creator
+
+  # 6) Three copies of LoggingService
+  logging-service-1:
+    build:
+      context: .
+      dockerfile: LoggingService/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:5003
+      - LoggingServiceUrl=http://logging-service-1:5003
+      - ConfigServerUrl=http://config-server:5001
+      # tell Hazelcast client how to find the cluster
+      - Hazelcast__ClusterName=dev
+      - Hazelcast__Networking__Addresses__0=hazelcast:5701
+    ports:
+      - "5003:5003"
+    depends_on:
+      - config-server
+      - hazelcast
+
+  logging-service-2:
+    build:
+      context: .
+      dockerfile: LoggingService/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:5004
+      - LoggingServiceUrl=http://logging-service-2:5004
+      - ConfigServerUrl=http://config-server:5001
+      - Hazelcast__ClusterName=dev
+      - Hazelcast__Networking__Addresses__0=hazelcast:5701
+    ports:
+      - "5004:5003"
+    depends_on:
+      - config-server
+      - hazelcast
+
+  logging-service-3:
+    build:
+      context: .
+      dockerfile: LoggingService/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:5005
+      - LoggingServiceUrl=http://logging-service-3:5005
+      - ConfigServerUrl=http://config-server:5001
+      - Hazelcast__ClusterName=dev
+      - Hazelcast__Networking__Addresses__0=hazelcast:5701
+    ports:
+      - "5005:5003"
+    depends_on:
+      - config-server
+      - hazelcast
+
+  # 7) Two copies of MessagesService
+  messages-service-1:
+    build:
+      context: .
+      dockerfile: MessagesService/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:5002
+      - MessagingServiceUrl=http://messages-service-1:5002
+      - ConfigServerUrl=http://config-server:5001
+      - BootstrapServers=kafka-1:9092,kafka-2:9092,kafka-3:9092
+    ports:
+      - "5002:5002"
+    depends_on:
+      - config-server
+      - kafka-1
+      - kafka-2
+      - kafka-3
+
+  messages-service-2:
+    build:
+      context: .
+      dockerfile: MessagesService/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:5006
+      - MessagingServiceUrl=http://messages-service-2:5006
+      - ConfigServerUrl=http://config-server:5001
+      - BootstrapServers=kafka-1:9092,kafka-2:9092,kafka-3:9092
+    ports:
+      - "5006:5002"
+    depends_on:
+      - config-server
+      - kafka-1
+      - kafka-2
+      - kafka-3
+
+  # 8) FacadeService
+  facade-service:
+    build:
+      context: .
+      dockerfile: FacadeService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:5000
+      - ConfigServerUrl=http://config-server:5001
+      - BootstrapServers=kafka-1:9092,kafka-2:9092,kafka-3:9092
+    ports:
+      - "5000:5000"
+    depends_on:
+      - config-server
+      - logging-service-1
+      - logging-service-2
+      - logging-service-3
+      - messages-service-1
+      - messages-service-2
+
+networks:
+  default:
+    driver: bridge
