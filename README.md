@@ -4,3 +4,5 @@
 2. Розгортання і робота з distributed in-memory data structures на основі Hazelcast:
 Distributed Map (hazelcast_solo)
 3. Мікросервиси з використанням Hazelcast Distributed Map (microservices_hazelcast)
+4. Мікросервиси з використанням Kafka MessageQueue (microservices_messagequeue)
+5. Мікросервиси з використанням Consul (microservices_consul)
